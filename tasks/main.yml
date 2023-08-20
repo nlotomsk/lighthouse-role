@@ -1,0 +1,37 @@
+---
+- name: Update the repository cache and update package "nginx" to latest version using default release squeeze-backport
+  ansible.builtin.apt:
+    name: nginx
+    state: latest
+    update_cache: yes
+
+- name: Update the repository install git
+  ansible.builtin.apt:
+    name: git
+    state: latest
+    update_cache: yes
+
+- name: Download lighthouse
+  ansible.builtin.git:
+    repo: 'https://github.com/VKCOM/lighthouse.git'
+    dest: "./lighthouse/"
+
+- name: Copy website files to the server's document root
+  copy:
+    src: "lighthouse"
+    dest: "/var/www/html"
+    mode: preserve
+    remote_src: true
+     
+- name: Apply Nginx template
+  template:
+    src: ./files/nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+  notify: Restart Nginx
+
+- name: Enable new site
+  file:
+    src: /etc/nginx/sites-available/default
+    dest: /etc/nginx/sites-enabled/default
+    state: link
+  notify: Restart Nginx
